@@ -1,0 +1,19 @@
+name: hangman
+version: '0.1.0.0'
+category: Game
+author: Justin Watt
+maintainer: justinwatt@gmail.com
+copyright: Copyright (c) 2016
+license: BSD3
+homepage: https://github.com/justinwatt/hangman#readme
+extra-source-files:
+  - README.md
+  - data/dict.txt
+dependencies:
+  - base >=4.7 && <5
+  - random
+  - split
+executables:
+  hangman:
+    main: Main.hs
+    source-dirs: src

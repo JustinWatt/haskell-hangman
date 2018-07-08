@@ -1,0 +1,32 @@
+-- This file has been generated from package.yaml by hpack version 0.28.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 069bb3c0ef62250672ec8d44d38d3bf321b2e61fca99fd6e44eeaa973e69ee2b
+
+name:                hangman
+version:             0.1.0.0
+homepage:            https://github.com/justinwatt/hangman#readme
+license:             BSD3
+license-file:        LICENSE
+author:              Justin Watt
+maintainer:          justinwatt@gmail.com
+copyright:           Copyright (c) 2016
+category:            Game
+build-type:          Simple
+cabal-version:       >= 1.10
+extra-source-files:
+    data/dict.txt
+    README.md
+
+executable hangman
+  hs-source-dirs:
+      src
+  main-is: Main.hs
+  other-modules:
+      Paths_hangman
+  default-language: Haskell2010
+  build-depends:
+      base >=4.7 && <5
+    , random
+    , split
