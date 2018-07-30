@@ -38,6 +38,7 @@ fillInCharacter :: Puzzle -> Char -> Puzzle
 fillInCharacter (Puzzle answer filledInSoFar s) c =
   Puzzle answer newFilledInSoFar (c:s)
   where
+    zipper :: Char -> Char -> Char
     zipper guessed wordChar guessChar =
       if wordChar == guessed
       then Just wordChar
