@@ -1,9 +1,10 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DataKinds        #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE GADTs            #-}
-{-# LANGUAGE LambdaCase       #-}
-{-# LANGUAGE TypeOperators    #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE LambdaCase            #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TypeOperators         #-}
 
 module Effects where
 
@@ -11,10 +12,10 @@ import           Control.Monad.Freer
 import           Control.Monad.Freer.Error
 import           Control.Monad.Freer.State
 import           Control.Monad.Freer.Writer
+import           Data.Map.Strict            as M
+import           Data.Map.Strict            (Map)
 import           System.Exit                hiding (ExitCode (ExitSuccess))
-import Data.Map.Strict as M
-import Data.Map.Strict (Map)
-import           System.Random       (randomRIO)
+import           System.Random              (randomRIO)
 
 data Random r where
   RandomNumber :: (Int, Int) -> Random Int
@@ -45,7 +46,7 @@ runFileSystemPure fs req = run $ interpret go req
   where
     go :: FileSystem v -> Eff '[] v
     go (ReadFile fp) = case M.lookup fp fs of
-      Nothing -> error "file not found"
+      Nothing       -> error "file not found"
       Just contents -> pure contents
 
 data Console r where

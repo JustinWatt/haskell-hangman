@@ -3,6 +3,7 @@
 {-# LANGUAGE GADTs            #-}
 {-# LANGUAGE LambdaCase       #-}
 {-# LANGUAGE TypeOperators    #-}
+
 module Main where
 
 import           Control.Monad       (forever, when)
