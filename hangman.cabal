@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 069bb3c0ef62250672ec8d44d38d3bf321b2e61fca99fd6e44eeaa973e69ee2b
+-- hash: 79f369da4e49788d520fec4a78f142dad9ed7adb999ee02c12c251748633e292
 
 name:                hangman
 version:             0.1.0.0
@@ -24,9 +24,12 @@ executable hangman
       src
   main-is: Main.hs
   other-modules:
+      Effects
       Paths_hangman
   default-language: Haskell2010
   build-depends:
       base >=4.7 && <5
+    , containers
+    , freer-simple
     , random
     , split
