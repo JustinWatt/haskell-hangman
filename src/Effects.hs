@@ -69,13 +69,16 @@ runConsole = interpretM (\case
   GetLine      -> getLine
   ExitSuccess  -> exitSuccess)
 
+nextVal :: Member (State [a]) effs => String -> Eff effs a
+nextVal errorMessage = get >>= \case
+  []     -> error errorMessage
+  (x:xs) -> put xs >> pure x
+
 runConsolePure :: [String] -> Eff '[Console] w -> [String]
 runConsolePure inputs req = snd . fst $
     run (runWriter (runState inputs (runError (reinterpret3 go req))))
   where
     go :: Console v -> Eff '[Error (), State [String], Writer [String]] v
     go (PutStrLn msg) = tell [msg]
-    go GetLine        = get >>= \case
-      []     -> error "not enough lines"
-      (x:xs) -> put xs >> pure x
+    go GetLine        = nextVal "not enough lines"
     go ExitSuccess    = throwError ()
