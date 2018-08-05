@@ -52,7 +52,7 @@ runFileSystemPure fs req = run $ interpret go req
 data Console r where
   PutStrLn    :: String -> Console ()
   GetLine     :: Console String
-  ExitSuccess :: Console()
+  ExitSuccess :: Console ()
 
 putStrLn' :: Member Console effs => String -> Eff effs ()
 putStrLn' = send . PutStrLn
