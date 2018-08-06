@@ -4,6 +4,7 @@
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE TypeOperators         #-}
 
 module Effects where
@@ -12,7 +13,8 @@ import           Control.Monad.Freer
 import           Control.Monad.Freer.Error
 import           Control.Monad.Freer.State
 import           Control.Monad.Freer.Writer
-import           Data.Map.Strict            as M
+import           Data.Function              ((&))
+import qualified Data.Map.Strict            as M
 import           Data.Map.Strict            (Map)
 import           System.Exit                hiding (ExitCode (ExitSuccess))
 import           System.Random              (randomRIO)
@@ -26,10 +28,10 @@ randomNumber = send . RandomNumber
 runRandom :: LastMember IO effs => Eff (Random ': effs) a  -> Eff effs a
 runRandom = interpretM (\case RandomNumber minMax -> randomRIO minMax)
 
-runRandomPure :: Int -> Eff '[Random] Int -> Int
-runRandomPure n req = run $ interpret go req
+runRandomPure :: forall effs a. Int -> Eff (Random ': effs) a -> Eff effs a
+runRandomPure n req = interpret go req
   where
-    go :: Random v -> Eff '[] v
+    go :: Random v -> Eff effs v
     go (RandomNumber _) = pure n
 
 data FileSystem r where
@@ -41,12 +43,16 @@ readFile' = send . ReadFile
 runFileSystem :: LastMember IO effs => Eff (FileSystem ': effs) a -> Eff effs a
 runFileSystem = interpretM (\case ReadFile fp -> readFile fp)
 
-runFileSystemPure :: Map String String -> Eff '[FileSystem] String -> String
-runFileSystemPure fs req = run $ interpret go req
+runFileSystemPure ::
+  forall effs a. Map String String
+  -> Eff (FileSystem ': effs) a
+  -> Eff effs a
+runFileSystemPure fs req = interpret go req
   where
-    go :: FileSystem v -> Eff '[] v
+    go :: FileSystem v -> Eff eff v
     go (ReadFile fp) = case M.lookup fp fs of
       Nothing       -> error "file not found"
+
       Just contents -> pure contents
 
 data Console r where
@@ -63,7 +69,9 @@ getLine' = send GetLine
 exitSuccess' :: Member Console effs => Eff effs ()
 exitSuccess' = send ExitSuccess
 
-runConsole :: LastMember IO effs => Eff (Console ': effs) a -> Eff effs a
+runConsole :: forall effs a. LastMember IO effs
+           => Eff (Console ': effs) a
+           -> Eff effs a
 runConsole = interpretM (\case
   PutStrLn msg -> putStrLn msg
   GetLine      -> getLine
@@ -74,11 +82,16 @@ nextVal errorMessage = get >>= \case
   []     -> error errorMessage
   (x:xs) -> put xs >> pure x
 
-runConsolePure :: [String] -> Eff '[Console] w -> [String]
-runConsolePure inputs req = snd . fst $
-    run (runWriter (runState inputs (runError (reinterpret3 go req))))
+runConsolePure :: forall effs w. [String]
+               -> Eff (Console ': effs) w
+               -> Eff effs (Maybe w, [String], [String])
+runConsolePure inputs req = do
+  ((x, inputs'), output) <- reinterpret3 go req
+    & runError & runState inputs & runWriter
+
+  pure (either (const Nothing) Just x, inputs', output)
   where
-    go :: Console v -> Eff '[Error (), State [String], Writer [String]] v
+    go :: Console v -> Eff (Error () ': State [String] ': Writer [String] ': effs) v
     go (PutStrLn msg) = tell [msg]
     go GetLine        = nextVal "not enough lines"
     go ExitSuccess    = throwError ()

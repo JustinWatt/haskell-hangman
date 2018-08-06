@@ -1,7 +1,6 @@
 {-# LANGUAGE DataKinds        #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs            #-}
-{-# LANGUAGE LambdaCase       #-}
 {-# LANGUAGE TypeOperators    #-}
 
 module Main where
@@ -9,12 +8,11 @@ module Main where
 import           Control.Monad       (forever, when)
 import           Control.Monad.Freer
 import           Data.Char           (toLower)
-import           Data.List           (intersperse)
 import           Data.Maybe          (fromMaybe, isJust)
 import           Data.Monoid         ((<>))
 import           Effects
-import           System.Exit         (exitSuccess)
-import           System.Random       (randomRIO)
+import qualified Data.Map.Strict            as M
+import           Data.Function              ((&))
 
 newtype WordList = WordList [String]
   deriving (Eq, Show)
@@ -103,7 +101,7 @@ randomWord' = gameWords >>= randomWord
 gameWords :: Member FileSystem eff => Eff eff WordList
 gameWords = do
   (WordList aw) <- allWords
-  return $ WordList (filter gameLength aw)
+  return $ WordList (Prelude.filter gameLength aw)
   where
     gameLength w =
       let
@@ -124,10 +122,23 @@ runGame puzzle = forever $ do
     _   -> putStrLn' "Your guess must be a single character"
 
 main :: IO ()
-main = runM $ (runConsole (runFileSystem (runRandom mainGame)))
+main = runM $ runConsole (runFileSystem (runRandom mainGame))
 
-mainGame :: Eff '[Random, FileSystem, Console, IO] ()
+mainGame :: Members '[Random, FileSystem, Console] r => Eff r ()
 mainGame = do
   word <- randomWord'
   let puzzle = freshPuzzle (toLower <$> word)
   runGame puzzle
+
+mainPure :: IO ()
+mainPure =
+   mainGame
+  & runRandomPure wordIndex
+  & runFileSystemPure fs
+  & runConsolePure inputs
+  & run
+  & print
+  where
+    fs = M.fromList [("data/dict.txt", "apple\nbanana")]
+    inputs = ["a", "l", "x", "p", "hi", "e", "h", "y", "z"]
+    wordIndex = 1 :: Int
